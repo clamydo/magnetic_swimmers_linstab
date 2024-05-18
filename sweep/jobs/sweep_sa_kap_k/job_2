@@ -1,0 +1,33 @@
+#!/bin/bash
+
+#SBATCH -J linstab_th90                   # Job name
+#SBATCH --output logs/linstabth90_%j_%A_%a.out            # Specify stdout output file (%j expands to jobId)
+#SBATCH --error logs/linstabth90_%j_%A_%a.err            # redirect error
+#SBATCH -p snip                     # Queue name
+#SBATCH -n 1                            # Total number of tasks
+#SBATCH -t 0-05:00:00                   # Run time (hh:mm:ss)
+#SBATCH -A dnip                  # Specify allocation to charge against
+#SBATCH --cpus-per-task=64               # Number of CPUs per tasks
+#SBATCH --mem-per-cpu 1800M                       # Memory reservation
+#SBATCH --mail-user snip
+#SBATCH --mail-type=FAIL,END
+
+
+MMA="jobs/sweep_sa_kap_k/sweep_sa_kap_k_th90.m"
+JNAME="sweep_sa_kap_k_th90"
+
+module purge
+module add math/Mathematica/11.1.1
+
+PREFIX="$JNAME-$(date +%Y%m%d-%H%M%S)"
+RESULTDIR="results/$PREFIX"
+
+mkdir -p "$RESULTDIR"
+cp "$MMA" "$RESULTDIR/"
+cp "$0" "$RESULTDIR/$JNAME.job"
+mkdir -p logs
+
+srun="srun --exclusive -n1 -c${SLURM_CPUS_PER_TASK}"
+
+$srun WolframScript -script "$MMA" "$PREFIX" "$RESULTDIR" > "logs/$JNAME.log"
+
